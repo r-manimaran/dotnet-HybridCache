@@ -1,0 +1,14 @@
+﻿@model FakeBackEndData
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Page Generated: @ViewData["clock"]</p>
+    <p>Time Taken: @(ViewData["timer"])ms</p>
+    <h2> Data From Backend service</h2>
+    <p>Unique Id:@Model.Id</p>
+    <p>Generated on:@Model.CreationTime</p>
+    <p>Provider:@Model.CacheProvider</p>
+</div>
