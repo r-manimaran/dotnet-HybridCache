@@ -26,12 +26,19 @@ builder.Services.AddMemoryCache();
 #pragma warning disable EXTEXP0018 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 builder.Services.AddHybridCache(options => {
         
+        //set maximum size of the cache
+        options.MaximumPayloadBytes = 1024 * 1024 * 10; //10MB
+        options.MaximumKeyLength = 512;
+
         options.DefaultEntryOptions = new ()
         {
             LocalCacheExpiration = FakeBackEndDataService.Expiration,
             Expiration = FakeBackEndDataService.Expiration
         };
     });
+
+// For Custom Type, we can add our own serializer
+// builder.Services.AddHybridCacheSerializer<CustomType, CustomTypeSerializer>();
 #pragma warning restore EXTEXP0018 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 //builder.Services.AddSingleton<FakeBackEndDataService, WithHybridCacheService>();
 
