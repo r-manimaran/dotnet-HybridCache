@@ -34,12 +34,53 @@ jobs:
       - name: Prepare JSON payload
         id: prepare_payload
         run: |
-          cat <<EOF > payload.json
+         # Create the inner payload first
+          INNER_PAYLOAD=$(cat <<EOF
           {
             "releaseUrl": "${{ steps.taginfo.outputs.release_url }}",
-            "tagName":    "${{ steps.taginfo.outputs.tag_name }}",
+            "tagName": "${{ steps.taginfo.outputs.tag_name }}",
             "targetEmails": [${EMAIL_LIST}],
-            "snsArn":     "${SNS_ARN}"
+            "snsArn": "${SNS_ARN}"
+          }
+          EOF
+          )
+          
+          # Create the Lambda proxy format
+          cat <<EOF > payload.json
+          {
+            "resource": "/",
+            "path": "/",
+            "httpMethod": "POST",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "multiValueHeaders": {},
+            "queryStringParameters": null,
+            "multiValueQueryStringParameters": null,
+            "pathParameters": null,
+            "stageVariables": null,
+            "requestContext": {
+              "resourceId": "123456",
+              "resourcePath": "/",
+              "httpMethod": "POST",
+              "extendedRequestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
+              "requestTime": "$(date -u '+%d/%b/%Y:%H:%M:%S +0000')",
+              "path": "/Prod/",
+              "accountId": "123456789012",
+              "protocol": "HTTP/1.1",
+              "stage": "Prod",
+              "domainPrefix": "1234567890",
+              "requestTimeEpoch": $(date +%s)000,
+              "requestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
+              "identity": {
+                "sourceIp": "127.0.0.1",
+                "userAgent": "GitHub-Actions"
+              },
+              "domainName": "1234567890.execute-api.us-east-1.amazonaws.com",
+              "apiId": "1234567890"
+            },
+            "body": "$(echo "$INNER_PAYLOAD" | sed 's/"/\\"/g' | tr -d '\n')",
+            "isBase64Encoded": false
           }
           EOF
         env:
