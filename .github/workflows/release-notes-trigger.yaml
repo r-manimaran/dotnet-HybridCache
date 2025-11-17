@@ -34,19 +34,14 @@ jobs:
       - name: Prepare JSON payload
         id: prepare_payload
         run: |
-         # Create the inner payload first
-          INNER_PAYLOAD=$(cat <<EOF
-          {
-            "releaseUrl": "${{ steps.taginfo.outputs.release_url }}",
-            "tagName": "${{ steps.taginfo.outputs.tag_name }}",
-            "targetEmails": [${EMAIL_LIST}],
-            "snsArn": "${SNS_ARN}"
-          }
-          EOF
-          )
+          # Create inner payload
+          echo "{\"releaseUrl\":\"${{ steps.taginfo.outputs.release_url }}\",\"tagName\":\"${{ steps.taginfo.outputs.tag_name }}\",\"targetEmails\":[${EMAIL_LIST}],\"snsArn\":\"${SNS_ARN}\"}" > inner_payload.json
           
-          # Create the Lambda proxy format
-          cat <<EOF > payload.json
+          # Escape the inner payload for JSON string
+          ESCAPED_BODY=$(cat inner_payload.json | sed 's/"/\\"/g')
+          
+          # Create Lambda proxy format
+          cat > payload.json << 'EOL'
           {
             "resource": "/",
             "path": "/",
@@ -64,13 +59,13 @@ jobs:
               "resourcePath": "/",
               "httpMethod": "POST",
               "extendedRequestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
-              "requestTime": "$(date -u '+%d/%b/%Y:%H:%M:%S +0000')",
+              "requestTime": "09/Apr/2015:12:34:56 +0000",
               "path": "/Prod/",
               "accountId": "123456789012",
               "protocol": "HTTP/1.1",
               "stage": "Prod",
               "domainPrefix": "1234567890",
-              "requestTimeEpoch": $(date +%s)000,
+              "requestTimeEpoch": 1428582896000,
               "requestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
               "identity": {
                 "sourceIp": "127.0.0.1",
@@ -79,12 +74,15 @@ jobs:
               "domainName": "1234567890.execute-api.us-east-1.amazonaws.com",
               "apiId": "1234567890"
             },
-            "body": "$(echo "$INNER_PAYLOAD" | sed 's/"/\\"/g' | tr -d '\n')",
+            "body": "BODY_PLACEHOLDER",
             "isBase64Encoded": false
           }
-          EOF
+          EOL
+          
+          # Replace placeholder with escaped body using perl for better handling
+          perl -i -pe "s/BODY_PLACEHOLDER/\Q\$ESCAPED_BODY\E/" payload.json
         env:
-          EMAIL_LIST: ${{ secrets.RELEASE_NOTIFY_EMAILS }}   # example: "\"dev@x.com\",\"team@x.com\""
+          EMAIL_LIST: ${{ secrets.RELEASE_NOTIFY_EMAILS }}
           SNS_ARN: ${{ secrets.RELEASE_SNS_ARN }}
 
       - name: Debug API configuration
