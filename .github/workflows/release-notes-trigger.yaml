@@ -36,13 +36,21 @@ jobs:
           EMAIL_LIST: ${{ secrets.RELEASE_NOTIFY_EMAILS }}   # example: "\"dev@x.com\",\"team@x.com\""
           SNS_ARN: ${{ secrets.RELEASE_SNS_ARN }}
 
+      - name: Debug API configuration
+        run: |
+          echo "API Gateway URL: ${{ secrets.API_GATEWAY_URL }}/trigger"
+          echo "API Key length: ${#API_KEY}"
+        env:
+          API_KEY: ${{ secrets.API_GATEWAY_KEY }}
+
       - name: Call API Gateway to trigger release notes generation
         run: |
           curl -X POST \
                -H "x-api-key: ${{ secrets.API_GATEWAY_KEY }}" \
                -H "Content-Type: application/json" \
                -d @payload.json \
-               "${{ secrets.API_GATEWAY_URL }}/trigger"
+               "${{ secrets.API_GATEWAY_URL }}/trigger" \
+               -v
 
       - name: Show request Payload
         if: always()
